@@ -61,26 +61,77 @@ def angular_to_euler_rate_matrix(euler):
 
 
 class PinKinematics:
-    def __init__(self, model_path, ee_name="ee_link", max_it=1000, eps=1e-4):
+    manipulator_joint_names = [
+        "shoulder_pan_joint",
+        "shoulder_lift_joint",
+        "elbow_joint",
+        "wrist_1_joint",
+        "wrist_2_joint",
+        "wrist_3_joint",
+    ]
+
+    def __init__(
+            self,
+            model_path,
+            ee_name="ee_link",
+            max_it=1000,
+            eps=1e-4,
+            joint_names=None,
+    ):
         self.model = pin.buildModelFromMJCF(model_path)
         self.data = self.model.createData()
 
         self.ee_frame_id = self.model.getFrameId(ee_name)
+        self.joint_names = list(joint_names or self.manipulator_joint_names)
+        self.joint_q_idx = self._get_joint_indices("idx_q")
+        self.joint_v_idx = self._get_joint_indices("idx_v")
 
         self.max_it = max_it
         self.eps = eps
         self.dt = 0.02
         self.damp = 1e-4
 
+    def _get_joint_indices(self, attr_name):
+        indices = []
+        for name in self.joint_names:
+            joint_id = self.model.getJointId(name)
+            if joint_id == self.model.njoints:
+                raise ValueError(f"Joint '{name}' not found in kinematics model.")
+
+            joint = self.model.joints[joint_id]
+            joint_size = joint.nq if attr_name == "idx_q" else joint.nv
+            if joint_size != 1:
+                raise ValueError(f"Joint '{name}' must have 1 DoF, got {joint_size}.")
+
+            indices.append(getattr(joint, attr_name))
+
+        return np.array(indices, dtype=np.int64)
+
+    def _full_q_from_joint(self, joint):
+        joint = np.asarray(joint, dtype=np.float64)
+        if joint.shape[0] == self.model.nq:
+            return joint.copy()
+        if joint.shape[0] < len(self.joint_q_idx):
+            raise ValueError(
+                f"Expected at least {len(self.joint_q_idx)} manipulator joints, got {joint.shape[0]}."
+            )
+
+        q = pin.neutral(self.model)
+        q[self.joint_q_idx] = joint[:len(self.joint_q_idx)]
+        return q
+
+    def _joint_from_full_q(self, q):
+        return np.asarray(q, dtype=np.float64)[self.joint_q_idx].copy()
+
     def solve_ik(self, target_pos, target_euler, current_joint):
         '''
         target_pos - np.array(x, y, z) в метрах
         target_euler - np.array(roll, pitch, yaw) углы Эйлера в радианах
-        current_joint - np.array(q1 ... q6) углы в радианах
+        current_joint - np.array(q1 ... q6) углы манипулятора в радианах
         '''
         target_rotation = euler_to_rotation(target_euler)
         target_position = pin.SE3(target_rotation, target_pos)
-        q = current_joint.copy()
+        q = self._full_q_from_joint(current_joint)
         i = 0
         while True:
             pin.forwardKinematics(self.model, self.data, q)
@@ -100,18 +151,21 @@ class PinKinematics:
                 
             J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.LOCAL)
             
-            J = -np.dot(pin.Jlog6(iMd.inverse()), J)
+            J = -np.dot(pin.Jlog6(iMd.inverse()), J[:, self.joint_v_idx])
             v = -J.T.dot(np.linalg.solve(J.dot(J.T) + self.damp * np.eye(6), err))
-            q = pin.integrate(self.model, q, v * self.dt)
+            v_full = np.zeros(self.model.nv, dtype=np.float64)
+            v_full[self.joint_v_idx] = v
+            q = pin.integrate(self.model, q, v_full * self.dt)
             
             # if not i % 10:
             #     print(f"{i}: error = {err.T}")
             i += 1
 
-        return success, q
+        return success, self._joint_from_full_q(q)
     
     def solve_fk(self, current_joint):
-        pin.forwardKinematics(self.model, self.data, current_joint)
+        q = self._full_q_from_joint(current_joint)
+        pin.forwardKinematics(self.model, self.data, q)
         pin.updateFramePlacement(self.model, self.data, self.ee_frame_id)
         oMf = self.data.oMf[self.ee_frame_id]
 
@@ -123,7 +177,7 @@ class PinKinematics:
         use_euler=True: строки [vx, vy, vz, roll_dot, pitch_dot, yaw_dot]
         use_euler=False: строки [vx, vy, vz, wx, wy, wz]
         '''
-        q = np.asarray(current_joint, dtype=np.float64)
+        q = self._full_q_from_joint(current_joint)
         pin.forwardKinematics(self.model, self.data, q)
         pin.updateFramePlacement(self.model, self.data, self.ee_frame_id)
 
@@ -134,6 +188,7 @@ class PinKinematics:
             self.ee_frame_id,
             pin.LOCAL_WORLD_ALIGNED,
         )
+        J = J[:, self.joint_v_idx]
 
         if not use_euler:
             return J
@@ -149,14 +204,11 @@ class PinKinematics:
 # ===================================================================================================
 # ===================================================================================================
 
-class AssemblingEnv(gym.Env):
+class Env(gym.Env):
 
     ee_name = "gripper_base"
 
-    kin_joints_names = ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", 
-                  "wrist_1_joint", "wrist_2_joint", "wrist_3_joint", "left_driver_joint", 
-                  "left_spring_link_joint", "left_follower", 'right_driver_joint', 
-                  "right_spring_link_joint", "right_follower_joint"]
+    kin_joints_names = PinKinematics.manipulator_joint_names
 
     joints_names = [
         "shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
