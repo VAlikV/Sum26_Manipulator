@@ -129,6 +129,8 @@ class PinKinematics:
         target_euler - np.array(roll, pitch, yaw) углы Эйлера в радианах
         current_joint - np.array(q1 ... q6) углы манипулятора в радианах
         '''
+        target_pos = np.asarray(target_pos, dtype=np.float64).copy()
+        target_euler = np.asarray(target_euler, dtype=np.float64).copy()
         target_rotation = euler_to_rotation(target_euler)
         target_position = pin.SE3(target_rotation, target_pos)
         q = self._full_q_from_joint(current_joint)
@@ -169,7 +171,7 @@ class PinKinematics:
         pin.updateFramePlacement(self.model, self.data, self.ee_frame_id)
         oMf = self.data.oMf[self.ee_frame_id]
 
-        return oMf.translation, rotation_to_euler(oMf.rotation)
+        return oMf.translation.copy(), rotation_to_euler(oMf.rotation.copy())
 
     def solve_jacobian(self, current_joint, use_euler=True):
         '''
