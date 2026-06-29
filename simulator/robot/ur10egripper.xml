@@ -1,0 +1,248 @@
+<mujoco model="robot">
+  <compiler angle="radian" meshdir="assets" autolimits="true"/>
+
+  <option integrator="RK4" cone="elliptic" impratio="10"/>
+
+  <default>
+    <default class="robot">
+      <material specular="0.5" shininess="0.25"/>
+      <joint axis="0 1 0" range="-6.28319 6.28319" armature="0.1"/>
+      <position ctrlrange="-6.2831 6.2831"/>
+      <general biastype="affine" ctrlrange="-6.2831 6.2831" gainprm="5000" biasprm="0 -5000 -500"/>
+      <default class="size4">
+        <joint damping="10"/>
+        <general forcerange="-330 330"/>
+      </default>
+      <default class="size3">
+        <joint damping="5"/>
+        <general forcerange="-150 150"/>
+        <default class="size3_limited">
+          <joint range="-3.1415 3.1415"/>
+          <general ctrlrange="-3.1415 3.1415"/>
+        </default>
+      </default>
+      <default class="size2">
+        <joint damping="2"/>
+        <general forcerange="-56 56"/>
+      </default>
+      <default class="visual_ur">
+        <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+      </default>
+      <default class="collision_ur">
+        <geom type="capsule" group="3"/>
+        <default class="eef_collision">
+          <geom type="cylinder"/>
+        </default>
+      </default>
+      <site size="0.001" rgba="0.5 0.5 0.5 0.3" group="4"/>
+
+      <default class="hande">
+        <joint damping="1" armature="0.01" />
+        <general dyntype="none" biastype="affine" ctrlrange="0 255" forcerange="-1000 1000" />
+
+        <default class="finger">
+            <joint type="slide" damping="5" armature="0.005" range="0 0.025"
+                solimplimit="0.95 0.99 0.001" solreflimit="0.005 1" />
+        </default>
+
+        <default class="visual">
+            <geom type="mesh" contype="0" conaffinity="0" group="2" />
+        </default>
+
+        <default class="collision">
+            <geom type="mesh" group="3" solimp="0.95 0.99 0.001" solref="0.004 1"
+                friction="0.7 0.2 0.001" />
+            <default class="pad">
+                <geom type="box" mass="0" group="3" condim="4" priority="1"
+                    solimp="0.95 0.99 0.001" solref="0.004 1" friction="1 0.3 0.001" />
+            </default>
+        </default>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <material class="robot" name="black" rgba="0.033 0.033 0.033 1"/>
+    <material class="robot" name="jointgray" rgba="0.278 0.278 0.278 1"/>
+    <material class="robot" name="linkgray" rgba="0.82 0.82 0.82 1"/>
+    <material class="robot" name="urblue" rgba="0.49 0.678 0.8 1"/>
+
+    <mesh file="ur10e/base_0.obj"/>
+    <mesh file="ur10e/base_1.obj"/>
+    <mesh file="ur10e/shoulder_0.obj"/>
+    <mesh file="ur10e/shoulder_1.obj"/>
+    <mesh file="ur10e/shoulder_2.obj"/>
+    <mesh file="ur10e/upperarm_0.obj"/>
+    <mesh file="ur10e/upperarm_1.obj"/>
+    <mesh file="ur10e/upperarm_2.obj"/>
+    <mesh file="ur10e/upperarm_3.obj"/>
+    <mesh file="ur10e/forearm_0.obj"/>
+    <mesh file="ur10e/forearm_1.obj"/>
+    <mesh file="ur10e/forearm_2.obj"/>
+    <mesh file="ur10e/forearm_3.obj"/>
+    <mesh file="ur10e/wrist1_0.obj"/>
+    <mesh file="ur10e/wrist1_1.obj"/>
+    <mesh file="ur10e/wrist1_2.obj"/>
+    <mesh file="ur10e/wrist2_0.obj"/>
+    <mesh file="ur10e/wrist2_1.obj"/>
+    <mesh file="ur10e/wrist2_2.obj"/>
+    <mesh file="ur10e/wrist3.obj"/>
+
+    <material name="metal" rgba="0.58 0.58 0.58 1"/>
+    <!-- <material name="silicone" rgba="0.1882 0.1882 0.1882 1"/>
+    <material name="black" rgba="0.149 0.149 0.149 1"/> -->
+
+    <mesh name="hande" file="gripper/hande.stl" />
+    <mesh name="hande_collision" file="gripper/hande-collision.stl" />
+    <mesh name="coupler" file="gripper/coupler.stl" />
+    <mesh name="right_finger" file="gripper/finger_1.stl" />
+    <mesh name="left_finger" file="gripper/finger_2.stl" />
+    <mesh name="right_finger_collision" file="gripper/finger_1-collision.stl" />
+    <mesh name="left_finger_collision" file="gripper/finger_2-collision.stl" />
+
+    <material name="gray" rgba="0.4 0.4 0.4 1" />
+    <material name="dark_gray" rgba="0.1 0.1 0.1 1" />
+  </asset>
+
+  <worldbody>
+    <light name="spotlight" mode="targetbodycom" target="wrist_2_link" pos="0 -1 2"/>
+    <body name="base" quat="0 0 0 -1" childclass="robot">
+      <inertial mass="4.0" pos="0 0 0" diaginertia="0.0061063308908 0.0061063308908 0.01125"/>
+      <geom mesh="base_0" material="black" class="visual_ur"/>
+      <geom mesh="base_1" material="jointgray" class="visual_ur"/>
+      <body name="shoulder_link" pos="0 0 0.181">
+        <inertial pos="0 0 0" mass="7.778" diaginertia="0.0314743 0.0314743 0.0218756"/>
+        <joint name="shoulder_pan_joint" class="size4" axis="0 0 1"/>
+        <geom mesh="shoulder_0" material="urblue" class="visual_ur"/>
+        <geom mesh="shoulder_1" material="black" class="visual_ur"/>
+        <geom mesh="shoulder_2" material="jointgray" class="visual_ur"/>
+        <geom class="collision_ur" size="0.078 0.08" pos="0 0 -0.05"/>
+        <body name="upper_arm_link" pos="0 0.176 0" quat="1 0 1 0">
+          <inertial pos="0 0 0.3065" mass="12.93" diaginertia="0.423074 0.423074 0.0363656"/>
+          <joint name="shoulder_lift_joint" class="size4"/>
+          <geom mesh="upperarm_0" material="black" class="visual_ur"/>
+          <geom mesh="upperarm_1" material="jointgray" class="visual_ur"/>
+          <geom mesh="upperarm_2" material="urblue" class="visual_ur"/>
+          <geom mesh="upperarm_3" material="linkgray" class="visual_ur"/>
+          <geom class="collision_ur" pos="0 -0.05 0" quat="1 1 0 0" size="0.078 0.08"/>
+          <geom class="collision_ur" size="0.06 0.3" pos="0 0 0.3"/>
+          <body name="forearm_link" pos="0 -0.137 0.613">
+            <inertial pos="0 0 0.2855" mass="3.87" diaginertia="0.11059 0.11059 0.0108844"/>
+            <joint name="elbow_joint" class="size3_limited"/>
+            <geom mesh="forearm_0" material="urblue" class="visual_ur"/>
+            <geom mesh="forearm_1" material="black" class="visual_ur"/>
+            <geom mesh="forearm_2" material="jointgray" class="visual_ur"/>
+            <geom mesh="forearm_3" material="linkgray" class="visual_ur"/>
+            <geom class="collision_ur" pos="0 0.08 0" quat="1 1 0 0" size="0.058 0.065"/>
+            <geom class="collision_ur" size="0.043 0.28" pos="0 0 0.29"/>
+            <body name="wrist_1_link" pos="0 0 0.571" quat="1 0 1 0">
+              <inertial pos="0 0.135 0" quat="0.5 0.5 -0.5 0.5" mass="1.96"
+                diaginertia="0.0055125 0.00510825 0.00510825"/>
+              <joint name="wrist_1_joint" class="size2"/>
+              <geom mesh="wrist1_0" material="black" class="visual_ur"/>
+              <geom mesh="wrist1_1" material="urblue" class="visual_ur"/>
+              <geom mesh="wrist1_2" material="jointgray" class="visual_ur"/>
+              <geom class="collision_ur" pos="0 0.06 0" quat="1 1 0 0" size="0.05 0.07"/>
+              <body name="wrist_2_link" pos="0 0.135 0">
+                <inertial pos="0 0 0.12" quat="0.5 0.5 -0.5 0.5" mass="1.96"
+                  diaginertia="0.0055125 0.00510825 0.00510825"/>
+                <joint name="wrist_2_joint" axis="0 0 1" class="size2"/>
+                <geom mesh="wrist2_0" material="black" class="visual_ur"/>
+                <geom mesh="wrist2_1" material="urblue" class="visual_ur"/>
+                <geom mesh="wrist2_2" material="jointgray" class="visual_ur"/>
+                <geom class="collision_ur" size="0.046 0.065" pos="0 0 0.05"/>
+                <geom class="collision_ur" pos="0 0.028 0.12" quat="1 1 0 0" size="0.046 0.043"/>
+                <body name="wrist_3_link" pos="0 0 0.12">
+                  <inertial pos="0 0.092 0" quat="0 1 -1 0" mass="0.202"
+                    diaginertia="0.000204525 0.000144346 0.000144346"/>
+                  <joint name="wrist_3_joint" class="size2"/>
+                  <geom material="linkgray" mesh="wrist3" class="visual_ur"/>
+                  <geom class="eef_collision" pos="0 0.097 0" quat="1 1 0 0" size="0.046 0.02"/>
+                  <site name="attachment_site" pos="0 0.1 0" quat="-1 1 0 0"/>
+
+                  <body name="hande" pos="0.0 0.12 0.0" quat="-1 1 -1 -1" childclass="hande">
+                    <camera name="cam_gripper" pos="0.0 0.1 0.0" quat="0.0000 0.0000 0.9659 0.2588" fovy="45"/>
+
+                    <geom mesh="coupler" class="visual" material="dark_gray" />
+                    <geom mesh="hande" class="visual" material="dark_gray" />
+                    <geom mesh="hande_collision" class="collision" />
+
+                    <body name="hande_left_finger" pos="0 0 0.099">
+                        <inertial pos="0.02262 -0.00759 0.00738"
+                            quat="0.871952 0.0369732 -0.211073 0.440205"
+                            mass="0.03804" diaginertia="1.22763e-05 1.22763e-05 1.22763e-05" />
+                        <joint name="hande_left_finger_joint" axis="1 0 0" class="finger" />
+                        <geom mesh="left_finger" class="visual" material="gray" />
+                        <!-- <geom mesh="left_finger_collision" class="collision" /> -->
+
+                        <geom class="pad" pos="-0.028 0 0.037" size="0.003 0.01 0.01" />
+                        <geom class="pad" pos="-0.0306 0 0.0232" euler="0 0.52 0" size="0.003 0.01 0.006" />
+                        <geom class="pad" pos="-0.033 0 0.008" size="0.003 0.01 0.012" />
+                    </body>
+
+                    <body name="hande_right_finger" pos="0 0 0.099">
+                        <inertial pos="-0.02262 0.00759 0.00738"
+                            quat="0.871952 -0.0369732 0.211073 0.440205"
+                            mass="0.03804" diaginertia="1.22763e-05 1.22763e-05 1.22763e-05" />
+                        <joint name="hande_right_finger_joint" axis="-1 0 0" class="finger" />
+                        <geom mesh="right_finger" class="visual" material="gray" />
+                        <!-- <geom mesh="right_finger_collision" class="collision" /> -->
+
+                        <geom class="pad" pos="0.028 0 0.037" size="0.003 0.01 0.01" />
+                        <geom class="pad" pos="0.0306 0 0.0232" euler="0 -0.52 0" size="0.003 0.01 0.006" />
+                        <geom class="pad" pos="0.033 0 0.008" size="0.003 0.01 0.012" />
+                    </body>
+
+                    <!-- <site name="tcp" pos="0 0 0.135" group="3" /> -->
+                </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="hande" body2="hande_left_finger" />
+    <exclude body1="hande" body2="hande_right_finger" />
+  </contact>
+
+  <!--
+    This adds stability to the model by having a tendon that distributes the forces between both
+    joints, such that the equality constraint doesn't have to do that much work in order to equalize
+    both joints. Since both joints share the same sign, we split the force between both equally by
+    setting coef=0.485
+  -->
+  <tendon>
+      <fixed name="split">
+          <joint joint="hande_left_finger_joint" coef="0.5" />
+          <joint joint="hande_right_finger_joint" coef="0.5" />
+      </fixed>
+  </tendon>
+
+  <equality>
+    <joint joint1="hande_right_finger_joint" joint2="hande_left_finger_joint"
+        polycoef="0 1 0 0 0"
+        solimp="0.95 0.99 0.001" solref="0.005 1" />
+  </equality>
+
+  <actuator>
+    <general class="size4" name="shoulder_pan" joint="shoulder_pan_joint"/>
+    <general class="size4" name="shoulder_lift" joint="shoulder_lift_joint"/>
+    <general class="size3_limited" name="elbow" joint="elbow_joint"/>
+    <general class="size2" name="wrist_1" joint="wrist_1_joint"/>
+    <general class="size2" name="wrist_2" joint="wrist_2_joint"/>
+    <general class="size2" name="wrist_3" joint="wrist_3_joint"/>
+
+    <general class="hande" name="fingers_actuator" tendon="split" forcerange="-1000 1000"
+        ctrlrange="0 255"
+        gainprm="0.490196 0 0" biasprm="0 -5000 -500" />
+  </actuator>
+
+  <!-- <keyframe>
+    <key name="home" qpos="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0" 
+                    ctrl="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0"/>
+  </keyframe> -->
+</mujoco>

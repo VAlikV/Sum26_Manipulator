@@ -1,1 +1,2 @@
-# Sum26_Manipulator
+# Sum26_manipulator
+Mujoco simulator for robotics course

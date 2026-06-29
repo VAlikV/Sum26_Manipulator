@@ -1,0 +1,11 @@
+__pycache__
+.vscode
+test*
+temp*
+MUJOCO_LOG.TXT
+*.egg-info
+build
+photos
+outputs*
+.agents
+.codex
