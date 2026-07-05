@@ -48,11 +48,11 @@
       <!-- <geom name="bottom_collision" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="bottom" class="collision_obj"/> -->
       <geom name="bottom_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" rgba="0.5 0.5 0.5 1" type="mesh" mesh="bottom" contype="0" conaffinity="0"/>
 
-      <geom name="col_bottom" type="box" pos="0 0 0.0025" size="0.04 0.025 0.0025" class="collision_obj" rgba="0.1 0.1 0.1 0.0"/>
-      <geom name="col_wall1" type="box" pos="0.0375 0 0.01" size="0.0025 0.025 0.01" class="collision_obj" rgba="0.1 0.1 0.1 0.0"/>
-      <geom name="col_wall2" type="box" pos="-0.0375 0 0.01" size="0.0025 0.025 0.01" class="collision_obj" rgba="0.1 0.1 0.1 0.0"/>
-      <geom name="col_wall3" type="box" pos="0.0 0.0225 0.01" size="0.04 0.0025 0.01" class="collision_obj" rgba="0.1 0.1 0.1 0.0"/>
-      <geom name="col_wall4" type="box" pos="0.0 -0.0225 0.01" size="0.04 0.0025 0.01" class="collision_obj" rgba="0.1 0.1 0.1 0.0"/>
+      <geom name="col_bottom" type="box" pos="0 0 0.0025" size="0.04 0.025 0.0025" class="collision_obj" rgba="0.7 0.1 0.1 1.0"/>
+      <geom name="col_wall1" type="box" pos="0.0375 0 0.01" size="0.0025 0.025 0.01" class="collision_obj" rgba="0.7 0.1 0.1 1.0"/>
+      <geom name="col_wall2" type="box" pos="-0.0375 0 0.01" size="0.0025 0.025 0.01" class="collision_obj" rgba="0.7 0.1 0.1 1.0"/>
+      <geom name="col_wall3" type="box" pos="0.0 0.0225 0.01" size="0.04 0.0025 0.01" class="collision_obj" rgba="0.7 0.1 0.1 1.0"/>
+      <geom name="col_wall4" type="box" pos="0.0 -0.0225 0.01" size="0.04 0.0025 0.01" class="collision_obj" rgba="0.7 0.1 0.1 1.0"/>
     </body>
 
     <body name="mid" pos="-0.15 -0.65 0.18" quat="1.0 0.0 0.0 0.0">
@@ -60,7 +60,7 @@
       <inertial pos="0.0 0.0 0.0" quat="1.0 0.0 0.0 0.0" mass="0.045" diaginertia="2.925375e-05 7.695375e-05 9.102e-05" />
       <!-- <geom name="mid_collision" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="mid" class="collision_obj"/> -->
       <!-- <geom name="mid_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" rgba="0 0.7 0 1" type="mesh" mesh="mid"/> -->
-      <geom name="mid_collision" type="box" pos="0 0 0.009" size="0.0272 0.0152 0.009" class="collision_obj" rgba="0.1 0.7 0.1 1.0"/>
+      <geom name="mid_collision" type="cylinder" pos="0 0 0.009" quat="0.707 0 0.707 0" size="0.0272 0.0152 0.009" class="collision_obj" rgba="0.1 0.7 0.1 1.0"/>
     </body>
 
     <body name="cap" pos="-0.15 -0.75 0.18" quat="1.0 0.0 1.0 0.0">

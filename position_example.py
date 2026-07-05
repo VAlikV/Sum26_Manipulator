@@ -13,7 +13,7 @@ env = Env(xml_path="scene.xml",
             control_mode="joint_position",  # "joint_position" | "joint_velocity"
             joint_velocity_limit=0.5,
             max_episode_steps = -1,
-            render_mode="all",   # None | "human" | "rgb_array" | "all"
+            render_mode="human",   # None | "human" | "rgb_array" | "all"
 )
 obs, info = env.reset()
 
@@ -44,12 +44,11 @@ position[0] = start_position[0] + 0.15
 position[2] = start_position[2] + 0.15
 
 
-for _ in range(50):
-
-    
+for _ in range(100):
+ 
     print(_)
 
-    s, m_joints = kinematics.solve_ik(position, euler, start_joints)
+    s, m_joints = kinematics.solve_ik(position, euler, all_joints)
     all_joints[0:6] = m_joints
 
     obs, reward, terminated, truncated, info = env.step(all_joints)
@@ -69,7 +68,7 @@ for _ in range(50):
     joints_target_graph.append(m_joints.copy())
     joints_vel_graph.append(obs["state"]["joint_vel"][0:6].copy())
 
-    # for ax, (name, img) in zip(axes, imgs.items()):
+    # for ax, (name, img) in zip(axes, images.items()):
     #     ax.clear()
     #     ax.imshow(img)
     #     ax.set_title(name)
