@@ -225,12 +225,15 @@ class Env(gym.Env):
     gripper_actuator_name = "fingers_actuator"
     # gripper_joint_name = "left_driver_joint"
 
-    camera_names = ["cam_front", "cam_side", "cam_gripper", "cam_state"]
+    camera_names = ["cam_gripper"]
+    # camera_names = ["cam_front", "cam_side", "cam_gripper", "cam_state"]
+    depth_camera_names = ["cam_gripper"]
 
-    objects_names = ["bottom", "mid", "cap"]
-    objects_joints = ["bottom_joint", "mid_joint", "cap_joint"]
+    objects_names = ["object"]
+    objects_joints = ["object_joint"]
 
-    initial_pose = [1.45567298, -1.5026531,  2.09830401, -2.15153486, -1.57066966, -0.12243712, 0]
+    # initial_pose = [1.45567298, -1.5026531,  2.09830401, -2.15153486, -1.57066966, -0.12243712, 0]
+    initial_pose = [1.45567294, -1.6422717,  1.85457138, -1.76818383, -1.57066966, -0.12243716, 0]
 
     def __init__(
                 self,
@@ -456,6 +459,7 @@ class Env(gym.Env):
 
         # ----------------------
         image_space = {}
+        depth_space = {}
 
         if (self.render_mode == "rgb_array") or (self.render_mode == "all"):
             # лучше взять из renderer
@@ -470,13 +474,23 @@ class Env(gym.Env):
                     dtype=np.uint8
                 )
 
+            for cam in self.depth_camera_names:
+                depth_space[cam] = spaces.Box(
+                    low=0.0,
+                    high=np.inf,
+                    shape=(H, W),
+                    dtype=np.float32
+                )
+
         image_space = spaces.Dict(image_space)
+        depth_space = spaces.Dict(depth_space)
 
         # ----------------------
         self.observation_space = spaces.Dict({
             "state": state_space,
             "objects": objects_space,
             "images": image_space,
+            "depths": depth_space,
         })
 
     # ======================================================================
@@ -618,7 +632,7 @@ class Env(gym.Env):
 
     def _get_obs(self):
 
-        obs = {"state":{}, "images": {}, "objects":{}}
+        obs = {"state":{}, "images": {}, "depths": {}, "objects":{}}
 
         obs["state"]["joint_pos"] = self.data.qpos[self.joints_qpos_idx]
         obs["state"]["joint_vel"] = self.data.qvel[self.joints_qvel_idx]
@@ -659,6 +673,11 @@ class Env(gym.Env):
             for cam, img in images.items():
                 obs["images"][cam] = img
 
+        depths = self.render_depth_cameras()
+        if depths is not None:
+            for cam, depth in depths.items():
+                obs["depths"][cam] = depth
+
         return obs
 
     # ======================================================================
@@ -672,6 +691,23 @@ class Env(gym.Env):
             self.renderer.update_scene(self.data, camera=cam_name)
             images[cam_name] = self.renderer.render().copy()
         return images
+
+    # ======================================================================
+
+    def render_depth_cameras(self):
+        if self.renderer is None:
+            return None
+
+        depths = {}
+        self.renderer.enable_depth_rendering()
+        try:
+            for cam_name in self.depth_camera_names:
+                self.renderer.update_scene(self.data, camera=cam_name)
+                depths[cam_name] = self.renderer.render().astype(np.float32).copy()
+        finally:
+            self.renderer.disable_depth_rendering()
+
+        return depths
 
     # ======================================================================
 
