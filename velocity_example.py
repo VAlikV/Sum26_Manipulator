@@ -14,7 +14,7 @@ env = Env(xml_path="scene.xml",
             control_mode="joint_velocity",  # "joint_position" | "joint_velocity"
             joint_velocity_limit=0.4,
             max_episode_steps = -1,
-            render_mode="all",   # None | "human" | "rgb_array" | "all"
+            render_mode="human",   # None | "human" | "rgb_array" | "all"
 )
 
 obs, info = env.reset()
@@ -28,6 +28,10 @@ gripper_pos = obs["state"]["joint_pos"][6]
 start_position, start_euler = kinematics.solve_fk(start_joints)
 
 position = start_position.copy()
+position1 = start_position.copy()
+position2 = start_position.copy()
+position3 = start_position.copy()
+
 euler = start_euler.copy()
 
 joint_target = joint_pos.copy()
@@ -39,6 +43,13 @@ joints_graph = []
 joints_target_graph = []
 joints_vel_graph = []
 joints_target_vel_graph = []
+
+position[2] -= 0.15
+position1[0] -= 0.1
+position2[1] -= 0.1
+position3[2] -= 0.1
+
+pos = [position1, position2, position3]
 
 _, target_joints = kinematics.solve_ik(position, euler, start_joints)
 print(target_joints)
@@ -52,8 +63,8 @@ planner = TrapezoidalTrajectoryPlanner(
     max_acceleration=max_acceleration,
 )
 
-plt.ion()
-fig, axes = plt.subplots(1, 3, figsize=(10, 5))
+# plt.ion()
+# fig, axes = plt.subplots(1, 3, figsize=(10, 5))
 
 t = time.time()
 
@@ -80,16 +91,18 @@ for i in range(trajectory_steps):
         dq_target = np.clip(dq, env.action_space.low[0:6], env.action_space.high[0:6])
         all_joints[0:6] = dq_target
 
-    # else:
-    #     if first:
-    #         planner.update(
-    #             start=joint_pos,
-    #             goal=start_joints[0:6],
-    #             max_velocity=max_velocity,
-    #             max_acceleration=max_acceleration,
-    #         )
-    #         t_sec = 0
-    #         first = False
+    else:
+        if len(pos) > 0:
+            p = pos.pop(0)
+            _, target_joints = kinematics.solve_ik(p, euler, start_joints)
+            planner.update(
+                start=joint_pos,
+                goal=target_joints[0:6],
+                max_velocity=max_velocity,
+                max_acceleration=max_acceleration,
+            )
+            t_sec = 0
+            first = False
 
     obs, reward, terminated, truncated, info = env.step(all_joints)
 
@@ -106,13 +119,13 @@ for i in range(trajectory_steps):
     # joints_vel_graph.append(obs["state"]["joint_vel"][0:6].copy())
     # joints_target_vel_graph.append(dq_target.copy())
 
-    for ax, (name, img) in zip(axes, images.items()):
-        ax.clear()
-        ax.imshow(img)
-        ax.set_title(name)
-        ax.axis("off")
+    # for ax, (name, img) in zip(axes, images.items()):
+    #     ax.clear()
+    #     ax.imshow(img)
+    #     ax.set_title(name)
+    #     ax.axis("off")
 
-    plt.pause(0.001)
+    # plt.pause(0.001)
 
     if terminated or truncated:
         print("Episode ended:", terminated, truncated, info)
@@ -170,5 +183,5 @@ env.close()
 # axes_vel[-2].set_xlabel("step")
 # fig_vel.suptitle("Joint Velocities")
 # fig_vel.tight_layout()
-plt.ioff()
-plt.show()
+# plt.ioff()
+# plt.show()

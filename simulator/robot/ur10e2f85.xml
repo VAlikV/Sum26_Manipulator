@@ -171,7 +171,7 @@
                   <site name="attachment_site" pos="0 0.1 0" quat="-1 1 0 0"/>
 
                   <body name="gripper_base" childclass="2f85" pos="0.0 0.11 0.0" quat="-1 1 -1 -1">
-                    <camera name="cam_gripper" pos="0.0 0.1 0.0" quat="0.0000 0.0000 0.9659 0.2588" fovy="45"/>
+                    <camera name="cam_gripper" pos="0.0 0.1 0.0" quat="0.0000 0.0000 1.0 0.0" fovy="45"/>
 
                     <inertial mass="0.777441" pos="7.77116e-05 8.42713e-05 0.0311656"
                       quat="0.704758 -0.00373684 -0.00570287 0.709415"

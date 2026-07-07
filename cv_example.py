@@ -15,7 +15,6 @@ import cv2
 def detect_red_cube_rgb(image):
     return detect_red_cube(image, min_area=40, input_format="rgb")
 
-
 kinematics = PinKinematics(model_path=get_robot_xml_path("ur10e2f85.xml"), ee_name="gripper_base")
 
 env = Env(xml_path="scene.xml",
@@ -23,7 +22,7 @@ env = Env(xml_path="scene.xml",
             control_hz = 100.0,
             mode = "realtime",   # "realtime" | "fast
             control_mode="joint_velocity",  # "joint_position" | "joint_velocity"
-            joint_velocity_limit=0.4,
+            joint_velocity_limit=0.9,
             max_episode_steps = -1,
             render_mode="all",   # None | "human" | "rgb_array" | "all"
 )
@@ -35,8 +34,12 @@ start_position, start_euler = kinematics.solve_fk(start_joints)
 
 target_position = start_position.copy()
 target_euler = start_euler.copy()
+target_position[2] -= 0.15
 
-max_velocity = np.array([0.4, 0.4, 0.4, 0.4, 0.4, 0.4])
+_, j = kinematics.solve_ik(target_position, target_euler, start_joints)
+print(j)
+
+max_velocity = np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
 max_acceleration = np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8])
 detector_camera = "cam_gripper"
 
@@ -65,8 +68,8 @@ blackboard = {
     "gripper_target": 0.0,
 }
 
-plt.ion()
-fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+# plt.ion()
+# fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
 t = time.time()
 steps = int(np.ceil(10.0 / env.sim_dt)) + 1
@@ -80,76 +83,80 @@ for _ in range(steps):
     obs, reward, terminated, truncated, info = env.step(blackboard["action"])
     blackboard["obs"] = obs
 
-    images = obs["images"]
-    depths = obs["depths"]
+    # images = obs["images"]
+    # depths = obs["depths"]
 
-    if detector_camera in images:
-        detection = detect_red_cube_rgb(images[detector_camera])
-        detection["name"] = "red_cube"
-        blackboard["detected_object"] = {
-            key: value for key, value in detection.items() if key != "mask"
-        }
-        blackboard["detected_object_2d"] = {
-            "name": "red_cube",
-            "camera": detector_camera,
-            "detected": bool(detection["detected"]),
-            "center": detection["center"].copy() if detection["center"] is not None else None,
-            "bbox": detection["bbox"].copy() if detection["bbox"] is not None else None,
-        }
-        blackboard.setdefault("detected_objects_2d", {})["red_cube"] = blackboard["detected_object_2d"]
-        blackboard["detected_object_mask"] = detection["mask"]
+    if blackboard.get("detected_objects_2d") is not None:
+        print(blackboard["detected_objects_2d"]["red_cube"]["center"])
+        print(blackboard["detected_objects_3d"]["red_cube"]["center"])
 
-    rgb_ax, depth_ax = axes
-    rgb_ax.clear()
-    depth_ax.clear()
+    # if detector_camera in images:
+    #     detection = detect_red_cube_rgb(images[detector_camera])
+    #     detection["name"] = "red_cube"
+    #     blackboard["detected_object"] = {
+    #         key: value for key, value in detection.items() if key != "mask"
+    #     }
+    #     blackboard["detected_object_2d"] = {
+    #         "name": "red_cube",
+    #         "camera": detector_camera,
+    #         "detected": bool(detection["detected"]),
+    #         "center": detection["center"].copy() if detection["center"] is not None else None,
+    #         "bbox": detection["bbox"].copy() if detection["bbox"] is not None else None,
+    #     }
+    #     blackboard.setdefault("detected_objects_2d", {})["red_cube"] = blackboard["detected_object_2d"]
+    #     blackboard["detected_object_mask"] = detection["mask"]
 
-    if detector_camera in images:
-        img = images[detector_camera]
-        if blackboard.get("detected_object") is not None:
-            img = draw_detection(img, blackboard["detected_object"])
+    # rgb_ax, depth_ax = axes
+    # rgb_ax.clear()
+    # depth_ax.clear()
 
-        if blackboard.get("detected_objects_2d") is not None:
-            print(blackboard["detected_objects_2d"]["red_cube"]["center"])
+    # if detector_camera in images:
+    #     img = images[detector_camera]
+    #     if blackboard.get("detected_object") is not None:
+    #         img = draw_detection(img, blackboard["detected_object"])
 
-        rgb_ax.imshow(img)
-        if blackboard.get("detected_object") is not None:
-            detection = blackboard["detected_object"]
-            rgb_ax.set_title(f"{detector_camera} RGB: {detection['detected']} area={detection['area']:.0f}")
-        else:
-            rgb_ax.set_title(f"{detector_camera} RGB")
-    else:
-        rgb_ax.set_title(f"{detector_camera} RGB missing")
-    rgb_ax.axis("off")
+    #     # if blackboard.get("detected_objects_2d") is not None:
+    #     #     print(blackboard["detected_objects_2d"]["red_cube"]["center"])
 
-    if detector_camera in depths:
-        depth = depths[detector_camera]
-        finite_depth = depth[np.isfinite(depth)]
-        if finite_depth.size:
-            vmin = np.percentile(finite_depth, 5)
-            vmax = np.percentile(finite_depth, 95)
-            if vmax <= vmin:
-                vmax = vmin + 1e-6
-        else:
-            vmin = 0.0
-            vmax = 1.0
-        depth_ax.imshow(depth, cmap="magma", vmin=vmin, vmax=vmax)
-        depth_ax.set_title(f"{detector_camera} depth")
+    #     rgb_ax.imshow(img)
+    #     if blackboard.get("detected_object") is not None:
+    #         detection = blackboard["detected_object"]
+    #         rgb_ax.set_title(f"{detector_camera} RGB: {detection['detected']} area={detection['area']:.0f}")
+    #     else:
+    #         rgb_ax.set_title(f"{detector_camera} RGB")
+    # else:
+    #     rgb_ax.set_title(f"{detector_camera} RGB missing")
+    # rgb_ax.axis("off")
 
-        x, y = blackboard["detected_objects_2d"]["red_cube"]["center"]
+    # if detector_camera in depths:
+    #     depth = depths[detector_camera]
+    #     finite_depth = depth[np.isfinite(depth)]
+    #     if finite_depth.size:
+    #         vmin = np.percentile(finite_depth, 5)
+    #         vmax = np.percentile(finite_depth, 95)
+    #         if vmax <= vmin:
+    #             vmax = vmin + 1e-6
+    #     else:
+    #         vmin = 0.0
+    #         vmax = 1.0
+    #     depth_ax.imshow(depth, cmap="magma", vmin=vmin, vmax=vmax)
+    #     depth_ax.set_title(f"{detector_camera} depth")
 
-        Z = depth[int(y)][int(x)]
+    #     x, y = blackboard["detected_objects_2d"]["red_cube"]["center"]
 
-        # X = (x - cx) * Z / fx
-        # Y = (y - cy) * Z / fy
-        # fx = W / (2 * tan(fovx / 2))
-        # fy = H / (2 * tan(fovy / 2))
+    #     Z = depth[int(y)][int(x)]
 
-        # print(depth[x, y])
-    else:
-        depth_ax.set_title(f"{detector_camera} depth missing")
-    depth_ax.axis("off")
+    #     # X = (x - cx) * Z / fx
+    #     # Y = (y - cy) * Z / fy
+    #     # fx = W / (2 * tan(fovx / 2))
+    #     # fy = H / (2 * tan(fovy / 2))
 
-    plt.pause(0.001)
+    #     # print(depth[x, y])
+    # else:
+    #     depth_ax.set_title(f"{detector_camera} depth missing")
+    # depth_ax.axis("off")
+
+    # plt.pause(0.001)
 
     if terminated or truncated:
         print("Episode ended:", terminated, truncated, info)
@@ -161,5 +168,5 @@ for _ in range(steps):
 
 env.close()
 
-plt.ioff()
-plt.show()
+# plt.ioff()
+# plt.show()

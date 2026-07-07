@@ -49,7 +49,7 @@ class DetectObjectNode(Node):
         self.camera_name = camera_name
         self.detector = detector
 
-    def _write_detection(self, blackboard, detection):
+    def _write_detection(self, blackboard, detection, depth):
         detection["name"] = self.object_name
         detection_2d = {
             "name": self.object_name,
@@ -59,18 +59,45 @@ class DetectObjectNode(Node):
             "bbox": None,
         }
 
+        detection_3d = {
+            "name": self.object_name,
+            "camera": self.camera_name,
+            "detected": bool(detection["detected"]),
+            "center": None,
+        }
+
+        x, y = np.asarray(detection["center"], dtype=np.float64).copy()
+        cx = 180
+        cy = 120
+
+        fx = 360 / (2 * np.tan(45*np.pi / 360))
+        fy = 240 / (2 * np.tan(45*np.pi / 360))
+
+        Z = depth[int(y)][int(x)]
+        X = (x - cx) * Z / fx
+        Y = (y - cy) * Z / fy
+
+        # print(X, Y, Z)        
+
         if detection["center"] is not None:
             detection_2d["center"] = np.asarray(detection["center"], dtype=np.float64).copy()
         if detection["bbox"] is not None:
             detection_2d["bbox"] = np.asarray(detection["bbox"], dtype=np.int64).copy()
 
+        if detection["center"] is not None:
+            detection_3d["center"] = np.asarray([X, Y, Z], dtype=np.float64).copy()
+
         blackboard["detected_object"] = {
             key: value for key, value in detection.items() if key != "mask"
         }
         blackboard["detected_object_2d"] = detection_2d
+        blackboard["detected_object_3d"] = detection_3d
 
         objects_2d = blackboard.setdefault("detected_objects_2d", {})
         objects_2d[self.object_name] = detection_2d
+
+        objects_3d = blackboard.setdefault("detected_objects_3d", {})
+        objects_3d[self.object_name] = detection_3d
 
         if "mask" in detection:
             blackboard["detected_object_mask"] = detection["mask"]
@@ -89,11 +116,12 @@ class DetectObjectNode(Node):
 
         obs = blackboard["obs"]
         image = obs["images"].get(self.camera_name)
+        depth = obs["depths"].get(self.camera_name)
         if image is None:
             return Status.FAILURE
 
         detection = self.detector(image)
-        self._write_detection(blackboard, detection)
+        self._write_detection(blackboard, detection, depth)
 
         if detection["detected"]:
             return Status.SUCCESS
@@ -119,9 +147,17 @@ class SolveIKNode(Node):
         kinematics = blackboard["kinematics"]
         current_joints = obs["state"]["joint_pos"][:6]
 
+        c_pos, c_euler = kinematics.solve_fk(current_joints)
+
+        obj_x, obj_y, obj_z = blackboard["detected_objects_3d"]["red_cube"]["center"]
+
+        c_pos[1] += (obj_x)
+        c_pos[0] += (obj_y - 0.1)
+        c_pos[2] -= (obj_z-0.10)
+
         success, goal_joints = kinematics.solve_ik(
-            self.position,
-            self.euler,
+            c_pos,
+            c_euler,
             current_joints,
         )
         if not success:
