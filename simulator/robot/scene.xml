@@ -37,9 +37,9 @@
     <light pos="0 0 1.5" dir="0 0 -1" directional="false"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
 
-    <body name="table" pos="0.0 -0.65 0.075">
+    <!-- <body name="table" pos="0.0 -0.65 0.075">
       <geom type="box" size="0.5 0.3 0.075" rgba="0.5 0.5 0.5 1" class="collision_obj" />
-    </body>
+    </body> -->
 
     <body name="object" pos="0.10 -0.65 0.18">
       <freejoint name="object_joint"/>

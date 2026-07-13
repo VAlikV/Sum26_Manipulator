@@ -28,6 +28,7 @@ gripper_pos = obs["state"]["joint_pos"][6]
 start_position, start_euler = kinematics.solve_fk(start_joints)
 
 position = start_position.copy()
+
 position1 = start_position.copy()
 position2 = start_position.copy()
 position3 = start_position.copy()
@@ -45,6 +46,9 @@ joints_vel_graph = []
 joints_target_vel_graph = []
 
 position[2] -= 0.15
+position[0] -= 0.15
+# position[2] -= 0.15
+
 position1[0] -= 0.1
 position2[1] -= 0.1
 position3[2] -= 0.1
@@ -102,7 +106,6 @@ for i in range(trajectory_steps):
                 max_acceleration=max_acceleration,
             )
             t_sec = 0
-            first = False
 
     obs, reward, terminated, truncated, info = env.step(all_joints)
 
@@ -112,12 +115,12 @@ for i in range(trajectory_steps):
     current_position, current_euler = kinematics.solve_fk(joint_pos)
     position, euler = kinematics.solve_fk(joint_target)
 
-    # target_position_graph.append(position.copy())
-    # current_position_graph.append(current_position.copy())
-    # joints_graph.append(joint_pos.copy())
-    # joints_target_graph.append(joint_target.copy())
-    # joints_vel_graph.append(obs["state"]["joint_vel"][0:6].copy())
-    # joints_target_vel_graph.append(dq_target.copy())
+    target_position_graph.append(position.copy())
+    current_position_graph.append(current_position.copy())
+    joints_graph.append(joint_pos.copy())
+    joints_target_graph.append(joint_target.copy())
+    joints_vel_graph.append(obs["state"]["joint_vel"][0:6].copy())
+    joints_target_vel_graph.append(dq_target.copy())
 
     # for ax, (name, img) in zip(axes, images.items()):
     #     ax.clear()
@@ -135,53 +138,53 @@ for i in range(trajectory_steps):
 
 env.close()
 
-# target_position_graph = np.asarray(target_position_graph)
-# current_position_graph = np.asarray(current_position_graph)
-# joints_graph = np.asarray(joints_graph)
-# joints_target_graph = np.asarray(joints_target_graph)
-# joints_vel_graph = np.asarray(joints_vel_graph)
-# joints_target_vel_graph = np.asarray(joints_target_vel_graph)
-# steps = np.arange(len(target_position_graph))
+target_position_graph = np.asarray(target_position_graph)
+current_position_graph = np.asarray(current_position_graph)
+joints_graph = np.asarray(joints_graph)
+joints_target_graph = np.asarray(joints_target_graph)
+joints_vel_graph = np.asarray(joints_vel_graph)
+joints_target_vel_graph = np.asarray(joints_target_vel_graph)
+steps = np.arange(len(target_position_graph))
 
-# fig, axes = plt.subplots(3, 1, sharex=True, figsize=(8, 7))
-# for axis_id, axis_name in enumerate(["x", "y", "z"]):
-#     axes[axis_id].plot(steps, current_position_graph[:, axis_id], label=f"${axis_name}_c$")
-#     axes[axis_id].plot(steps, target_position_graph[:, axis_id], "--", label=f"${axis_name}_t$")
-#     axes[axis_id].set_ylabel(f"{axis_name}, m")
-#     axes[axis_id].grid(True)
-#     axes[axis_id].legend()
+fig, axes = plt.subplots(3, 1, sharex=True, figsize=(8, 7))
+for axis_id, axis_name in enumerate(["x", "y", "z"]):
+    axes[axis_id].plot(steps, current_position_graph[:, axis_id], label=f"${axis_name}_c$")
+    axes[axis_id].plot(steps, target_position_graph[:, axis_id], "--", label=f"${axis_name}_t$")
+    axes[axis_id].set_ylabel(f"{axis_name}, m")
+    axes[axis_id].grid(True)
+    axes[axis_id].legend()
 
-# axes[-1].set_xlabel("step")
-# fig.tight_layout()
+axes[-1].set_xlabel("step")
+fig.tight_layout()
 
-# joint_names = ["q1", "q2", "q3", "q4", "q5", "q6"]
+joint_names = ["q1", "q2", "q3", "q4", "q5", "q6"]
 
-# fig_joints, axes_joints = plt.subplots(3, 2, sharex=True, figsize=(10, 8))
-# axes_joints = axes_joints.ravel()
-# for joint_id, joint_name in enumerate(joint_names):
-#     axes_joints[joint_id].plot(steps, joints_graph[:, joint_id], label=f"${joint_name}_c$")
-#     axes_joints[joint_id].plot(steps, joints_target_graph[:, joint_id], "--", label=f"${joint_name}_t$")
-#     axes_joints[joint_id].set_ylabel(f"{joint_name}, rad")
-#     axes_joints[joint_id].grid(True)
-#     axes_joints[joint_id].legend()
+fig_joints, axes_joints = plt.subplots(3, 2, sharex=True, figsize=(10, 8))
+axes_joints = axes_joints.ravel()
+for joint_id, joint_name in enumerate(joint_names):
+    axes_joints[joint_id].plot(steps, joints_graph[:, joint_id], label=f"${joint_name}_c$")
+    axes_joints[joint_id].plot(steps, joints_target_graph[:, joint_id], "--", label=f"${joint_name}_t$")
+    axes_joints[joint_id].set_ylabel(f"{joint_name}, rad")
+    axes_joints[joint_id].grid(True)
+    axes_joints[joint_id].legend()
 
-# axes_joints[-1].set_xlabel("step")
-# axes_joints[-2].set_xlabel("step")
-# fig_joints.suptitle("Joint Positions")
-# fig_joints.tight_layout()
+axes_joints[-1].set_xlabel("step")
+axes_joints[-2].set_xlabel("step")
+fig_joints.suptitle("Joint Positions")
+fig_joints.tight_layout()
 
-# fig_vel, axes_vel = plt.subplots(3, 2, sharex=True, figsize=(10, 8))
-# axes_vel = axes_vel.ravel()
-# for joint_id, joint_name in enumerate(joint_names):
-#     axes_vel[joint_id].plot(steps, joints_vel_graph[:, joint_id], label=f"$\\dot{{{joint_name}}}_c$")
-#     axes_vel[joint_id].plot(steps, joints_target_vel_graph[:, joint_id], "--", label=f"$\\dot{{{joint_name}}}_t$")
-#     axes_vel[joint_id].set_ylabel(f"{joint_name}, rad/s")
-#     axes_vel[joint_id].grid(True)
-#     axes_vel[joint_id].legend()
+fig_vel, axes_vel = plt.subplots(3, 2, sharex=True, figsize=(10, 8))
+axes_vel = axes_vel.ravel()
+for joint_id, joint_name in enumerate(joint_names):
+    axes_vel[joint_id].plot(steps, joints_vel_graph[:, joint_id], label=f"$\\dot{{{joint_name}}}_c$")
+    axes_vel[joint_id].plot(steps, joints_target_vel_graph[:, joint_id], "--", label=f"$\\dot{{{joint_name}}}_t$")
+    axes_vel[joint_id].set_ylabel(f"{joint_name}, rad/s")
+    axes_vel[joint_id].grid(True)
+    axes_vel[joint_id].legend()
 
-# axes_vel[-1].set_xlabel("step")
-# axes_vel[-2].set_xlabel("step")
-# fig_vel.suptitle("Joint Velocities")
-# fig_vel.tight_layout()
-# plt.ioff()
-# plt.show()
+axes_vel[-1].set_xlabel("step")
+axes_vel[-2].set_xlabel("step")
+fig_vel.suptitle("Joint Velocities")
+fig_vel.tight_layout()
+plt.ioff()
+plt.show()
