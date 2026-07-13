@@ -233,8 +233,8 @@ class Env(gym.Env):
     objects_joints = ["object_joint"]
 
     # initial_pose = [1.45567298, -1.5026531,  2.09830401, -2.15153486, -1.57066966, -0.12243712, 0]
-    # initial_pose = [1.45567294, -1.6422717,  1.85457138, -1.76818383, -1.57066966, -0.12243716, 0]
-    initial_pose = [1.45567296, -1.5509475,   2.04677839, -2.05171484, -1.57066966, -0.12243714, 0]
+    initial_pose = [1.45567294, -1.6422717,  1.85457138, -1.76818383, -1.57066966, -0.12243716, 0]
+    # initial_pose = [1.45567296, -1.5509475,   2.04677839, -2.05171484, -1.57066966, -0.12243714, 0]
 
     def __init__(
                 self,
@@ -516,8 +516,8 @@ class Env(gym.Env):
             pos = self.data.qpos[id:id+3]
             quat = self.data.qpos[id+3:id+7]  
 
-            dx = np.random.uniform(-0.02, 0.02)
-            dy = np.random.uniform(-0.02, 0.02)
+            dx = np.random.uniform(-0.05, 0.05)
+            dy = np.random.uniform(-0.05, 0.05)
             yaw = np.random.uniform(-np.pi/4, np.pi/4)  
 
             new_pos = pos.copy()
@@ -538,7 +538,7 @@ class Env(gym.Env):
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
             cam = self.viewer.cam
             cam.lookat[:] = [-0.430, -0.367, -0.075]
-            cam.distance = 1
+            cam.distance = 2
             cam.azimuth = 145
             cam.elevation = -24
 
